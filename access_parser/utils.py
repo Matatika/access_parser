@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import struct
@@ -55,19 +56,16 @@ FORMAT_TO_DEFAULT_VALUE = {
 
 # https://stackoverflow.com/questions/45560782
 def mdb_date_to_readable(double_time):
-    try:
+    with contextlib.suppress(OverflowError, struct.error):
         dtime_bytes = struct.pack("Q", double_time)
 
         dtime_double = struct.unpack('<d', dtime_bytes)[0]
         dtime_frac, dtime_whole = math.modf(dtime_double)
         dtime = (ACCESS_EPOCH + timedelta(days=dtime_whole) + timedelta(days=dtime_frac))
-        if dtime == ACCESS_EPOCH:
-            return "(Empty Date)"
+
         return str(dtime)
-    except OverflowError:
-        return "(Invalid Date)"
-    except struct.error:
-        return "(Invalid Date)"
+
+    return None
 
 
 def numeric_to_string(bytes_num, scale=6):
